@@ -63,6 +63,7 @@ import {
   EscalationCorrelationPanel,
   EconomicCorrelationPanel,
   DisasterCorrelationPanel,
+  CorrelationNetworkPanel,
   DefensePatentsPanel,
   HormuzPanel,
   ChokepointStripPanel,
@@ -1105,6 +1106,8 @@ export class PanelLayoutManager implements AppModule {
       p.setMapNavigateHandler((lat, lon) => { this.ctx.map?.setCenter(lat, lon, 5); });
       this.ctx.panels['disaster-correlation'] = p;
     }
+
+    this.createPanel('correlation-network', () => new CorrelationNetworkPanel());
 
     if (this.shouldCreatePanel('strategic-risk')) {
       const strategicRiskPanel = new StrategicRiskPanel();

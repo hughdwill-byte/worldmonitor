@@ -104,6 +104,7 @@ import {
   disasterAdapter,
 } from '@/services/correlation-engine';
 import type { CorrelationPanel } from '@/components/CorrelationPanel';
+import type { CorrelationNetworkPanel } from '@/components/CorrelationNetworkPanel';
 
 const CYBER_LAYER_ENABLED = import.meta.env.VITE_ENABLE_CYBER_LAYER === 'true';
 
@@ -1270,6 +1271,8 @@ export class App {
           const panel = this.state.panels[`${domain}-correlation`] as CorrelationPanel | undefined;
           panel?.updateCards(this.state.correlationEngine!.getCards(domain));
         }
+        (this.state.panels['correlation-network'] as CorrelationNetworkPanel | undefined)
+          ?.updateAllCards(this.state.correlationEngine!.getAllCards());
       });
     }
 
@@ -1921,6 +1924,8 @@ export class App {
           const panel = this.state.panels[`${domain}-correlation`] as CorrelationPanel | undefined;
           panel?.updateCards(engine.getCards(domain));
         }
+        (this.state.panels['correlation-network'] as CorrelationNetworkPanel | undefined)
+          ?.updateAllCards(engine.getAllCards());
       },
       REFRESH_INTERVALS.correlationEngine,
       () => this.shouldRefreshCorrelation(),

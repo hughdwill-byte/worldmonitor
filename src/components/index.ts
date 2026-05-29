@@ -73,6 +73,7 @@ export * from './WorldClockPanel';
 export { AirlineIntelPanel } from './AirlineIntelPanel';
 export { AviationCommandBar } from './AviationCommandBar';
 export * from './CorrelationPanel';
+export * from './CorrelationNetworkPanel';
 export * from './MilitaryCorrelationPanel';
 export * from './EscalationCorrelationPanel';
 export * from './EconomicCorrelationPanel';
