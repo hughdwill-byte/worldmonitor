@@ -11,6 +11,8 @@ import { haversineKm } from '@/utils/distance';
 import { IntelligenceServiceClient } from '@/generated/client/worldmonitor/intelligence/v1/service_client';
 import { premiumFetch } from '@/services/premium-fetch';
 import { hasPremiumAccess } from '@/services/panel-gating';
+import { saveSignals, loadSignals } from './signal-accumulator';
+import { fetchHistoricalUsgsSignals } from './historical-usgs';
 
 const LLM_SCORE_THRESHOLD = 60;
 const LLM_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
@@ -48,11 +50,20 @@ export class CorrelationEngine {
     if (this.running) return;
     this.running = true;
     try {
+      const usgsPromise = fetchHistoricalUsgsSignals();
       this.pruneLlmCache();
       const t0 = performance.now();
 
+      const usgsSignals = await usgsPromise;
+
       for (const adapter of this.adapters) {
-        const signals = adapter.collectSignals(ctx);
+        const liveSignals = adapter.collectSignals(ctx);
+        saveSignals(adapter.domain, liveSignals);
+        const accumulated = loadSignals(adapter.domain);
+        const extra = adapter.domain === 'disaster'
+          ? mergeSignals(accumulated, usgsSignals)
+          : accumulated;
+        const signals = mergeSignals(liveSignals, extra);
         const clusters = this.clusterSignals(signals, adapter);
         const scored = this.scoreClusters(clusters, adapter);
         const filtered = scored.filter(c => c.score >= adapter.threshold);
@@ -447,6 +458,20 @@ export class CorrelationEngine {
       }
     }
   }
+}
+
+function mergeSignals(primary: SignalEvidence[], secondary: SignalEvidence[]): SignalEvidence[] {
+  const seen = new Set<string>();
+  const result: SignalEvidence[] = [];
+  for (const s of primary) {
+    const k = `${s.type}|${s.label}|${Math.floor(s.timestamp / 3_600_000)}`;
+    if (!seen.has(k)) { seen.add(k); result.push(s); }
+  }
+  for (const s of secondary) {
+    const k = `${s.type}|${s.label}|${Math.floor(s.timestamp / 3_600_000)}`;
+    if (!seen.has(k)) { seen.add(k); result.push(s); }
+  }
+  return result;
 }
 
 // Internal types
